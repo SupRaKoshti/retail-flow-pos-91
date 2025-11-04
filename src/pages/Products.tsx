@@ -3,18 +3,60 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { products } from '@/data/mockData';
+// import { products } from '@/data/mockData';
 import { Search, Plus, Edit, Trash2, Package } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-const Products = () => {
+interface ProductVariant {
+  id: number;
+  variant_name: string;
+  sku: string;
+  price: number;
+}
+
+interface SubCategory {
+  id: number;
+  name: string;
+  category_name: string;
+}
+
+interface Product {
+  id: number;
+  name: string;
+  description?: string;
+  image?: string | null;
+  subcategory: SubCategory;
+  variants: ProductVariant[];
+}
+
+const Products: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('http://127.0.0.1:8000/inventory/products/');
+        if (!res.ok) throw new Error('Failed to fetch products');
+        const data: Product[] = await res.json();
+        setProducts(data);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchQuery.toLowerCase())
+    product.variants.some((v) =>
+      v.sku.toLowerCase().includes(searchQuery.toLowerCase())
+    ) ||
+    product.subcategory?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -52,9 +94,8 @@ const Products = () => {
                 <tr className="border-b">
                   <th className="text-left p-3 font-semibold">Product</th>
                   <th className="text-left p-3 font-semibold">SKU</th>
-                  <th className="text-left p-3 font-semibold">Category</th>
+                  <th className="text-left p-3 font-semibold">SubCategory</th>
                   <th className="text-left p-3 font-semibold">Price</th>
-                  <th className="text-left p-3 font-semibold">Stock</th>
                   <th className="text-right p-3 font-semibold">Actions</th>
                 </tr>
               </thead>
@@ -77,19 +118,20 @@ const Products = () => {
                       </div>
                     </td>
                     <td className="p-3">
-                      <code className="text-sm bg-muted px-2 py-1 rounded">{product.sku}</code>
+                      <code className="text-sm bg-muted px-2 py-1 rounded">{product.variants?.[0]?.sku || '-'}
+                      </code>
                     </td>
                     <td className="p-3">
-                      <Badge variant="outline">{product.category}</Badge>
-                    </td>
-                    <td className="p-3 font-semibold">₹{product.price.toLocaleString()}</td>
-                    <td className="p-3">
+                      <Badge variant="outline">{product.subcategory?.name || '-'}</Badge>
+                     </td>
+                    <td className="p-3 font-semibold">₹{product.variants?.[0]?.price?.toLocaleString() || '—'}</td>
+                    {/* <td className="p-3">
                       <Badge 
                         variant={product.stock > 20 ? 'default' : product.stock > 0 ? 'secondary' : 'destructive'}
                       >
                         {product.stock} units
                       </Badge>
-                    </td>
+                    </td> */}
                     <td className="p-3">
                       <div className="flex items-center justify-end gap-2">
                         <Button variant="ghost" size="icon">
