@@ -23,8 +23,8 @@ const Auth = () => {
       await login(email, password);
       toast.success('Login successful!');
       navigate('/');
-    } catch (error) {
-      toast.error('Invalid credentials. Use password: password');
+    } catch (error: any) {
+      toast.error(error.message || 'Invalid credentials');
     } finally {
       setIsLoading(false);
     }
@@ -32,7 +32,7 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-success/10 p-4">
-      <Card className="w-full max-w-md p-8 space-y-6">
+      <Card className="w-full max-w-md p-8 space-y-6 shadow-lg">
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-4">
             <div className="p-3 bg-primary rounded-lg">
@@ -49,7 +49,7 @@ const Auth = () => {
             <Input
               id="email"
               type="email"
-              placeholder="admin@pos.com"
+              placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -80,14 +80,9 @@ const Auth = () => {
           </Button>
         </form>
 
-        <div className="space-y-2 text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg">
-          <p className="font-medium">Demo Credentials:</p>
-          <div className="space-y-1">
-            <p>Admin: admin@pos.com</p>
-            <p>Manager: manager@pos.com</p>
-            <p>Cashier: cashier@pos.com</p>
-            <p className="text-xs mt-2">Password: <span className="font-mono">password</span></p>
-          </div>
+        {/* Optional: You can remove this demo credentials block since real login is implemented */}
+        <div className="text-xs text-center text-muted-foreground mt-4">
+          <p>Use your registered account to log in.</p>
         </div>
       </Card>
     </div>

@@ -1,14 +1,25 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
+// Define user roles
 export type UserRole = 'admin' | 'manager' | 'cashier';
 
+// User interface
 export interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
   role: UserRole;
 }
 
+// Login API response interface
+interface LoginResponse {
+  access: string;
+  refresh: string;
+  user: User;
+}
+
+// Auth context interface
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
@@ -16,18 +27,16 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
+// Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demonstration
-const mockUsers: User[] = [
-  { id: '1', name: 'Admin User', email: 'admin@pos.com', role: 'admin' },
-  { id: '2', name: 'Manager User', email: 'manager@pos.com', role: 'manager' },
-  { id: '3', name: 'Cashier User', email: 'cashier@pos.com', role: 'cashier' },
-];
+// API base URL (you can move this to an .env file)
+const API_URL = 'http://localhost:8000/account/api/login/';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
+  // Load user from localStorage on refresh
   useEffect(() => {
     const storedUser = localStorage.getItem('pos_user');
     if (storedUser) {
@@ -35,20 +44,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  // Login function
   const login = async (email: string, password: string) => {
-    // Mock authentication - in real app, this would call an API
-    const foundUser = mockUsers.find(u => u.email === email);
-    if (foundUser && password === 'password') {
-      setUser(foundUser);
-      localStorage.setItem('pos_user', JSON.stringify(foundUser));
-    } else {
-      throw new Error('Invalid credentials');
+    try {
+      const response = await axios.post<LoginResponse>(API_URL, { email, password });
+
+      const { access, refresh, user } = response.data;
+
+      // Store tokens and user info
+      localStorage.setItem('access_token', access);
+      localStorage.setItem('refresh_token', refresh);
+      localStorage.setItem('pos_user', JSON.stringify(user));
+
+      setUser(user);
+    } catch (error: any) {
+      const message =
+        error.response?.data?.detail ||
+        error.response?.data?.error ||
+        'Invalid credentials. Please try again.';
+      throw new Error(message);
     }
   };
 
+  // Logout function
   const logout = () => {
-    setUser(null);
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('pos_user');
+    setUser(null);
   };
 
   return (
@@ -58,9 +81,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+// Custom hook to use the AuthContext
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
