@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from 'axios';  
 
 // Define user roles
 export type UserRole = 'admin' | 'manager' | 'cashier';
@@ -31,7 +31,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // API base URL (you can move this to an .env file)
-const API_URL = 'http://localhost:8000/account/api/login/';
+const API_URL = 'http://127.0.0.1:8000/account/api/login/';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
