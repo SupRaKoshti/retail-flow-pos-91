@@ -25,6 +25,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  loading: boolean; // Added loading state
 }
 
 // Create context
@@ -35,13 +36,27 @@ const API_URL = 'http://127.0.0.1:8000/account/api/login/';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true); // Added loading state
 
   // Load user from localStorage on refresh
   useEffect(() => {
     const storedUser = localStorage.getItem('pos_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    
+    // Check if storedUser exists and is not "undefined"
+    if (storedUser && storedUser !== 'undefined') {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('Failed to parse stored user:', error);
+        // Clear corrupted data
+        localStorage.removeItem('pos_user');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+      }
     }
+    
+    setLoading(false); // Done loading
   }, []);
 
   // Login function
@@ -75,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, loading }}>
       {children}
     </AuthContext.Provider>
   );
