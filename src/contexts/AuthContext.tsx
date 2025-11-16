@@ -25,38 +25,36 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
-  loading: boolean; // Added loading state
+  loading: boolean;
 }
 
 // Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// API base URL (you can move this to an .env file)
-const API_URL = 'http://127.0.0.1:8000/account/api/login/';
+// API base URL - Use relative URL since Django serves both frontend and backend
+const API_URL = '/account/api/login/';  // ✅ CHANGED: Relative URL
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true); // Added loading state
+  const [loading, setLoading] = useState(true);
 
   // Load user from localStorage on refresh
   useEffect(() => {
     const storedUser = localStorage.getItem('pos_user');
     
-    // Check if storedUser exists and is not "undefined"
     if (storedUser && storedUser !== 'undefined') {
       try {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
       } catch (error) {
         console.error('Failed to parse stored user:', error);
-        // Clear corrupted data
         localStorage.removeItem('pos_user');
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
       }
     }
     
-    setLoading(false); // Done loading
+    setLoading(false);
   }, []);
 
   // Login function
